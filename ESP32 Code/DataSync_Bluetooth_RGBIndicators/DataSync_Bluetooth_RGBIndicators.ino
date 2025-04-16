@@ -7,8 +7,8 @@
 
 // ========== Feather ESP32 V2 NeoPixel Setup ==========
 #if defined(ADAFRUIT_FEATHER_ESP32_V2) || defined(ARDUINO_ADAFRUIT_ITSYBITSY_ESP32)
-#define PIN_NEOPIXEL 0
-#define NEOPIXEL_I2C_POWER 2
+  #define PIN_NEOPIXEL 0
+  #define NEOPIXEL_I2C_POWER 2
 #endif
 
 Adafruit_NeoPixel pixel(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
@@ -21,7 +21,7 @@ BLEServer* pServer = nullptr;
 BLECharacteristic* pNotifyChar = nullptr;
 bool deviceConnected = false;
 bool wasConnected = false;
-
+int uvSensorPin = 26; //Connecting to A0 on board
 // ========== NeoPixel Control ==========
 void enableInternalPower(){
 #if defined(NEOPIXEL_I2C_POWER)
@@ -177,15 +177,30 @@ void loop(){
 
   // Notify and flash cyan if connected
   if(deviceConnected){
-    fakeSensorValue = (fakeSensorValue + 1) % 100;
-    char buffer[10];
-    sprintf(buffer, "%d", fakeSensorValue);
 
-    pNotifyChar->setValue(buffer);
+    //4095 when there is no UV
+    //0 whnen exposed completely
+
+    // --- 1. Read from UV Sensor ---
+    int analogValue = analogRead(uvSensorPin);
+    Serial.print("Analog Value: ");
+    Serial.println(analogValue);
+    
+    float voltage = analogValue * (3.3 / 4095.0); // Convert to voltage
+  
+    // --- 2. Convert to Estimated UV Index (simple scaling) ---
+    // Assume 0V = 0 UV Index, 3.0V = UV Index ~11 (max on UV scale)
+    float uvIndex = voltage * (11.0 / 3.0);
+    uvIndex = constrain(uvIndex, 0.0, 11.0);
+
+    char payload[10];
+    sprintf(payload, "%d", payload);
+
+    pNotifyChar->setValue(payload);
     pNotifyChar->notify();
 
     Serial.print("📤 Sent: ");
-    Serial.println(buffer);
+    Serial.println(payload);
 
     flashLED(0, 255, 255, 100); // Cyan blink
     delay(900); // total loop delay ~1 sec
