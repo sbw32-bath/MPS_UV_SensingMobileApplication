@@ -1,0 +1,48 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/header"
+        android:text="UV Monitoring App"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center" android:layout_height="24dp" android:layout_width="24dp"/>
+
+    <Button
+        android:id="@+id/turn_on_bluetooth_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Turn Bluetooth On"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/scan_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan Devices"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/disconnect_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Disconnect"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/uv_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="UV Data: N/A"/>
+
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/uv_chart"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"/>
+
+</LinearLayout>

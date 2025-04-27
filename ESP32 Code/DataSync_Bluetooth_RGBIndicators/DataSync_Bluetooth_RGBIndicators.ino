@@ -7,8 +7,8 @@
 
 // ========== Feather ESP32 V2 NeoPixel Setup ==========
 #if defined(ADAFRUIT_FEATHER_ESP32_V2) || defined(ARDUINO_ADAFRUIT_ITSYBITSY_ESP32)
-#define PIN_NEOPIXEL 0
-#define NEOPIXEL_I2C_POWER 2
+  #define PIN_NEOPIXEL 0
+  #define NEOPIXEL_I2C_POWER 2
 #endif
 
 Adafruit_NeoPixel pixel(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
@@ -19,8 +19,27 @@ Adafruit_NeoPixel pixel(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
 BLEServer* pServer = nullptr;
 BLECharacteristic* pNotifyChar = nullptr;
+
 bool deviceConnected = false;
 bool wasConnected = false;
+
+const int UV_SENSOR_PIN = 26; //Connecting to A0 on board
+
+const int MAX_SENSOR_VALUE = 0;  // 0 corresponds to the maximum UV index
+const int MIN_SENSOR_VALUE = 4095; // 4095 corresponds to the min UV index
+
+const float MAX_UV_INDEX = 10.0; 
+const float MIN_UV_INDEX = 0.0;
+
+// ========== Function to map UV index on scale 1 - 10
+float getUVMeasurement(int analogValue){
+    if(analogValue < MIN_SENSOR_VALUE) analogValue = MIN_SENSOR_VALUE;
+    if(analogValue > MAX_SENSOR_VALUE) analogValue = MAX_SENSOR_VALUE;
+
+    // Map the analog value (0 = max UV, 4095 = min UV)
+    float uvIndex = MIN_UV_INDEX + (float)(analogValue - MIN_SENSOR_VALUE) / (MAX_SENSOR_VALUE - MIN_SENSOR_VALUE) * (MAX_UV_INDEX - MIN_UV_INDEX);
+    
+}
 
 // ========== NeoPixel Control ==========
 void enableInternalPower(){
@@ -76,6 +95,8 @@ void flashLED(int r, int g, int b, int duration = 100){
   setStatusLED(0, 0, 0);
 }
 
+
+
 // ========== BLE Security ==========
 class DeviceSecurity : public BLESecurityCallbacks{
   uint32_t onPassKeyRequest() override {
@@ -123,6 +144,8 @@ class ServerCallbacks : public BLEServerCallbacks{
   }
 };
 
+
+
 // ========== Setup ==========
 void setup(){
   Serial.begin(115200);
@@ -162,6 +185,8 @@ void setup(){
   Serial.println("📡 Advertising started...");
 }
 
+
+
 // ========== Loop ==========
 void loop(){
   static int fakeSensorValue = 0;
@@ -177,15 +202,25 @@ void loop(){
 
   // Notify and flash cyan if connected
   if(deviceConnected){
-    fakeSensorValue = (fakeSensorValue + 1) % 100;
-    char buffer[10];
-    sprintf(buffer, "%d", fakeSensorValue);
 
-    pNotifyChar->setValue(buffer);
+    //4095 when there is no UV
+    //0 whnen exposed completely
+
+    // --- 1. Read from UV Sensor ---
+    int analogValue = analogRead(UV_SENSOR_PIN);
+    Serial.print("Analog Value: ");
+    Serial.println(analogValue);
+    
+    float uvIndex = getUVMeasurement(analogValue);
+
+    char payload[10];
+    sprintf(payload, "%.2f", uvIndex);
+
+    pNotifyChar->setValue(payload);
     pNotifyChar->notify();
 
     Serial.print("📤 Sent: ");
-    Serial.println(buffer);
+    Serial.println(payload);
 
     flashLED(0, 255, 255, 100); // Cyan blink
     delay(900); // total loop delay ~1 sec
