@@ -41,6 +41,8 @@ float getUVMeasurement(int analogValue){
     return uvIndex;
 }
 
+
+
 // ========== NeoPixel Control ==========
 void enableInternalPower(){
 #if defined(NEOPIXEL_I2C_POWER)
@@ -218,6 +220,7 @@ void loop(){
 
     char payload[10];
     sprintf(payload, "%.2f", uvIndex);
+
 
     pNotifyChar->setValue(payload);
     pNotifyChar->notify();
