@@ -19,9 +19,30 @@ Adafruit_NeoPixel pixel(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
 BLEServer* pServer = nullptr;
 BLECharacteristic* pNotifyChar = nullptr;
+
 bool deviceConnected = false;
 bool wasConnected = false;
-int uvSensorPin = 26; //Connecting to A0 on board
+
+const int UV_SENSOR_PIN = 26; //Connecting to A0 on board
+
+const int MAX_SENSOR_VALUE = 0;  // 0 corresponds to the maximum UV index
+const int MIN_SENSOR_VALUE = 4095;  // 4095 corresponds to the minimum UV index
+
+const float MAX_UV_INDEX = 10.0;  // Maximum UV Index
+const float MIN_UV_INDEX = 0.0;   // Minimum UV Index
+
+// ========== Function to Convert Sensor Value to UV Index ==========
+float getUVMeasurement(int analogValue){
+    if(analogValue < MIN_SENSOR_VALUE) analogValue = MIN_SENSOR_VALUE;
+    if(analogValue > MAX_SENSOR_VALUE) analogValue = MAX_SENSOR_VALUE;
+
+    float uvIndex = MIN_UV_INDEX + (float)(analogValue - MIN_SENSOR_VALUE) / (MAX_SENSOR_VALUE - MIN_SENSOR_VALUE) * (MAX_UV_INDEX - MIN_UV_INDEX);
+    
+    return uvIndex;
+}
+
+
+
 // ========== NeoPixel Control ==========
 void enableInternalPower(){
 #if defined(NEOPIXEL_I2C_POWER)
@@ -76,6 +97,9 @@ void flashLED(int r, int g, int b, int duration = 100){
   setStatusLED(0, 0, 0);
 }
 
+
+
+
 // ========== BLE Security ==========
 class DeviceSecurity : public BLESecurityCallbacks{
   uint32_t onPassKeyRequest() override {
@@ -107,6 +131,9 @@ class DeviceSecurity : public BLESecurityCallbacks{
   }
 };
 
+
+
+
 // ========== Server Callbacks ==========
 class ServerCallbacks : public BLEServerCallbacks{
   void onConnect(BLEServer* pServer) override{
@@ -122,6 +149,9 @@ class ServerCallbacks : public BLEServerCallbacks{
     BLEDevice::startAdvertising();
   }
 };
+
+
+
 
 // ========== Setup ==========
 void setup(){
@@ -162,6 +192,9 @@ void setup(){
   Serial.println("📡 Advertising started...");
 }
 
+
+
+
 // ========== Loop ==========
 void loop(){
   static int fakeSensorValue = 0;
@@ -178,23 +211,16 @@ void loop(){
   // Notify and flash cyan if connected
   if(deviceConnected){
 
-    //4095 when there is no UV
-    //0 whnen exposed completely
-
     // --- 1. Read from UV Sensor ---
-    int analogValue = analogRead(uvSensorPin);
+    int analogValue = analogRead(UV_SENSOR_PIN);
     Serial.print("Analog Value: ");
     Serial.println(analogValue);
     
-    float voltage = analogValue * (3.3 / 4095.0); // Convert to voltage
-  
-    // --- 2. Convert to Estimated UV Index (simple scaling) ---
-    // Assume 0V = 0 UV Index, 3.0V = UV Index ~11 (max on UV scale)
-    float uvIndex = voltage * (11.0 / 3.0);
-    uvIndex = constrain(uvIndex, 0.0, 11.0);
+    float uvIndex = getUVMeasurement(analogValue);
 
     char payload[10];
-    sprintf(payload, "%d", payload);
+    sprintf(payload, "%.2f", uvIndex);
+
 
     pNotifyChar->setValue(payload);
     pNotifyChar->notify();
