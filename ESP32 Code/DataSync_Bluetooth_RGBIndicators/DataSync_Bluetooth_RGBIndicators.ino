@@ -26,19 +26,19 @@ bool wasConnected = false;
 const int UV_SENSOR_PIN = 26; //Connecting to A0 on board
 
 const int MAX_SENSOR_VALUE = 0;  // 0 corresponds to the maximum UV index
-const int MIN_SENSOR_VALUE = 4095; // 4095 corresponds to the min UV index
+const int MIN_SENSOR_VALUE = 4095;  // 4095 corresponds to the minimum UV index
 
-const float MAX_UV_INDEX = 10.0; 
-const float MIN_UV_INDEX = 0.0;
+const float MAX_UV_INDEX = 10.0;  // Maximum UV Index
+const float MIN_UV_INDEX = 0.0;   // Minimum UV Index
 
-// ========== Function to map UV index on scale 1 - 10
+// ========== Function to Convert Sensor Value to UV Index ==========
 float getUVMeasurement(int analogValue){
     if(analogValue < MIN_SENSOR_VALUE) analogValue = MIN_SENSOR_VALUE;
     if(analogValue > MAX_SENSOR_VALUE) analogValue = MAX_SENSOR_VALUE;
 
-    // Map the analog value (0 = max UV, 4095 = min UV)
     float uvIndex = MIN_UV_INDEX + (float)(analogValue - MIN_SENSOR_VALUE) / (MAX_SENSOR_VALUE - MIN_SENSOR_VALUE) * (MAX_UV_INDEX - MIN_UV_INDEX);
     
+    return uvIndex;
 }
 
 // ========== NeoPixel Control ==========
@@ -97,6 +97,7 @@ void flashLED(int r, int g, int b, int duration = 100){
 
 
 
+
 // ========== BLE Security ==========
 class DeviceSecurity : public BLESecurityCallbacks{
   uint32_t onPassKeyRequest() override {
@@ -128,6 +129,9 @@ class DeviceSecurity : public BLESecurityCallbacks{
   }
 };
 
+
+
+
 // ========== Server Callbacks ==========
 class ServerCallbacks : public BLEServerCallbacks{
   void onConnect(BLEServer* pServer) override{
@@ -143,6 +147,7 @@ class ServerCallbacks : public BLEServerCallbacks{
     BLEDevice::startAdvertising();
   }
 };
+
 
 
 
@@ -187,6 +192,7 @@ void setup(){
 
 
 
+
 // ========== Loop ==========
 void loop(){
   static int fakeSensorValue = 0;
@@ -202,9 +208,6 @@ void loop(){
 
   // Notify and flash cyan if connected
   if(deviceConnected){
-
-    //4095 when there is no UV
-    //0 whnen exposed completely
 
     // --- 1. Read from UV Sensor ---
     int analogValue = analogRead(UV_SENSOR_PIN);
